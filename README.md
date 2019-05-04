@@ -28,11 +28,10 @@ namespace simple_clicker
         public const int MLEFTUP_PRESS = 0x04;
 
         //for enable clicker
-        public static Stopwatch sw;
-        public static string lastkey = "";
-
+        public static string lastkey;
+        public static Stopwatch sw = Stopwatch.StartNew();
         public static string keyForEnable = "RButton"; // right mouse button
-        public static int waitToNextClick = 400;       // delay between clicks
+        public static int waitToNextClick = 450;       // delay between clicks
 
         //is enabled clicker
         public static bool Enabled = false;
@@ -52,34 +51,10 @@ namespace simple_clicker
                 "\n   Same for disable clicker" +
                 "\n\n---------");
 
-            //start async control method
-            Start();
-
-            while (true)
-            {
-                if (Enabled)
-                {
-                    //clicker
-                    mouse_event(LEFTDOWN_PRESS, Control.MousePosition.X, Control.MousePosition.Y, 0, 0);
-                    System.Threading.Thread.Sleep(Clickrate[0]);
-                    mouse_event(MLEFTUP_PRESS, Control.MousePosition.X, Control.MousePosition.Y, 0, 0);
-                    System.Threading.Thread.Sleep(Clickrate[1]);
-                }
-            }
+            //start async clicker
+            StartClicker();
 
 
-
-        }
-
-        public static async void Start()
-        {
-            await Task.Run(() => ControlR());
-
-        }
-
-        //async void for control program state
-        static async Task ControlR()
-        {
             while (true)
             {
                 Thread.Sleep(10);
@@ -91,57 +66,66 @@ namespace simple_clicker
                         //whats key is pressed
                         string key = ((Keys)i).ToString();
 
-                        //if key not set (full cycle complete)
-                        if (lastkey == "")
-                        {
-                            //check input key
-                            if(key == keyForEnable)
+                        // we need RButton only
+                        if (key == keyForEnable) {
 
-                            //write key to lastkeys
-                            lastkey = key;
+                            if (lastkey == "")
+                            {
+                                //start to new cricle
+                                sw.Reset();
+                                sw.Start();
+                                lastkey = "1";
+                            }
+                            else {
 
-                            //start timer
-                            sw = Stopwatch.StartNew();
-                        }
-                        else {
-                            //stop timer
-                            sw.Stop();  
-                            
-                            //if key equal 
-                            if (key == keyForEnable) {
+                                //check the time
+                                sw.Stop();
 
-                                //we should click as fast as possible to activate or disable Clicker (<400ms)
+                                //you should click as fast as possible to activate or disable Clicker (<450ms)
                                 if (sw.ElapsedMilliseconds <= waitToNextClick)
                                 {
-                                    //disable or enable
-
-                                    Enabled = !Enabled;
-                                    if (Enabled)
-                                    {
-                                        Console.WriteLine("Clicker enabled");
-                                    }
-                                    else
-                                    {
-                                        Console.WriteLine("Clicker disabled");
-                                    }
-
+                                    Enabled = !Enabled; // invert
+                                    Console.WriteLine("Change status :: {0}", Enabled);
                                 }
-                                else {
-                                    Console.WriteLine("Fail enable : Too slow click..");
-                                }
+                                    
+                                else
+                                    Console.WriteLine("Too slow!");
 
                                 //reset all
                                 lastkey = "";
                                 sw.Reset();
-                                
-
                             }
-                        }
-                        
 
+                        }
 
                         break;
                     }
+                }
+            }
+
+
+
+
+        }
+
+        public static async void StartClicker()
+        {
+            await Task.Run(() => Clicker());
+
+        }
+
+        //async void for control program state
+        static async Task Clicker()
+        {
+            while (true)
+            {
+                if (Enabled)
+                {
+                    //clicker
+                    mouse_event(LEFTDOWN_PRESS, Control.MousePosition.X, Control.MousePosition.Y, 0, 0);
+                    Thread.Sleep(Clickrate[0]);
+                    mouse_event(MLEFTUP_PRESS, Control.MousePosition.X, Control.MousePosition.Y, 0, 0);
+                    Thread.Sleep(Clickrate[1]);
                 }
             }
         }
